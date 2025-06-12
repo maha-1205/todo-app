@@ -1,20 +1,33 @@
 import type { todo } from "../components/card"
-export const todoReducer = (state: any, action: any) => {
+type todoReducerAction =
+    | { type: 'completeTask'; category: string; id: string }
+    | { type: 'changeTitle'; category: string; id: string; title: string }
+    | { type: 'deleteCard', category: string; id: string }
+    | { type: 'addtask'; category: string; title: string }
+
+type TodoState = {
+    [category: string]: todo[];
+};
+function updateState(state: TodoState, category: string, newTodo: todo[]) {
+    let updated = { ...state, [category]: newTodo }
+    localStorage.setItem("tasks", JSON.stringify(updated))
+    return updated
+
+}
+export const todoReducer = (state: TodoState, action: todoReducerAction) => {
     switch (action.type) {
         case 'completeTask': {
             let newTodo = state[action.category].map((item: todo) => {
-                if (item.id == action.id) {
-                    return {
-                        ...item,
-                        isCompleted: !item.isCompleted
-                    }
+                if (item.id == action.id) return {
+                    ...item,
+                    isCompleted: !item.isCompleted
                 }
+
                 else
                     return item
 
             })
-            localStorage.setItem("tasks", JSON.stringify({ ...state, [action.category]: newTodo }))
-            return { ...state, [action.category]: newTodo }
+            return updateState(state, action.category, newTodo)
         }
         case 'changeTitle': {
             let newTodo = state[action.category].map((item: todo) => {
@@ -28,8 +41,7 @@ export const todoReducer = (state: any, action: any) => {
                 else
                     return item
             })
-            localStorage.setItem("tasks", JSON.stringify({ ...state, [action.category]: newTodo }))
-            return { ...state, [action.category]: newTodo }
+            return updateState(state, action.category, newTodo)
         }
         case 'deleteCard': {
             let newTodo = state[action.category].filter((item: todo) => item.id != action.id)
@@ -45,13 +57,11 @@ export const todoReducer = (state: any, action: any) => {
                 createdOn: date.toDateString(),
                 category: action.category
             }
-            console.log("category", action.category, state, state[action.category])
             let newTodo = [...state[action.category], task]
-            localStorage.setItem("tasks", JSON.stringify({ ...state, [action.category]: newTodo }))
-            return { ...state, [action.category]: newTodo }
+            return updateState(state, action.category, newTodo)
         }
         default: {
-            throw Error('Unknown action: ' + action.type);
+            throw Error('Unknown action: ' + (action as any).type);
         }
 
     }

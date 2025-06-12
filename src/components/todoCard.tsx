@@ -5,11 +5,14 @@ import { todoReducer } from "../reducer/todoReducer";
 
 
 export default function TodoCard() {
-    let localTodoList = localStorage.getItem("tasks")
-    let array = localTodoList ? JSON.parse(localTodoList) : { work: [], personal: [] }
+
+
 
     let [category, setCategory] = useState(localStorage.getItem("category") ?? "work")
-    let [todoList, dispatch] = useReducer(todoReducer, array)
+    let [todoList, dispatch] = useReducer(todoReducer, undefined, () => {
+        const local = localStorage.getItem("tasks");
+        return local ? JSON.parse(local) : { work: [], personal: [] };
+    })
     let [task, setTask] = useState(false)
 
 
