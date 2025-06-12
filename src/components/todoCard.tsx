@@ -1,73 +1,38 @@
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import Card, { type todo } from "./card";
-import Task from "./addtask";
-import { v4 as uuidv4 } from 'uuid';
+import Task from "./addtask";;
+import { todoReducer } from "../reducer/todoReducer";
 
 
 export default function TodoCard() {
-    let data = localStorage.getItem("tasks")
-    let array = []
-    if (data) {
-        array = JSON.parse(data) ?? []
-    }
+    let localTodoList = localStorage.getItem("tasks")
+    let array = localTodoList ? JSON.parse(localTodoList) : { work: [], personal: [] }
 
-    let [todoList, setTodoList] = useState(array)
-    console.log("1", todoList)
+    let [category, setCategory] = useState(localStorage.getItem("category") ?? "work")
+    let [todoList, dispatch] = useReducer(todoReducer, array)
     let [task, setTask] = useState(false)
 
-    function isCompleted(id: string) {
-        let newTodo = todoList.map((item: todo) => {
-            if (item.id == id) {
-                return {
-                    ...item,
-                    isCompleted: !item.isCompleted
-                }
-            }
-            else
-                return item
 
-        })
-        localStorage.setItem("tasks", JSON.stringify(newTodo))
-        setTodoList(newTodo)
+
+    function changeCategory(category: string) {
+        localStorage.setItem("category", category)
+        setCategory(category)
+    }
+    function isCompleted(id: string) {
+        dispatch({ id, type: 'completeTask', category })
     }
 
     function changeTitle(title: string, id: string) {
-        let newTodo = todoList.map((item: todo) => {
-            if (item.id == id) {
-                return {
-                    ...item,
-                    title: title,
-                    isCompleted: false
-                }
-            }
-            else
-                return item
-        })
-        console.log("new todo", newTodo)
-        localStorage.setItem("tasks", JSON.stringify(newTodo))
-        setTodoList(newTodo)
+        dispatch({ id, title, type: 'changeTitle', category })
 
     }
     function deleteCard(id: string) {
-        let newTodo = todoList.filter((item: todo) => item.id != id)
-        localStorage.setItem("tasks", JSON.stringify(newTodo))
-        setTodoList(newTodo)
+        dispatch({ id, type: 'deleteCard', category })
 
     }
 
     function addTask(title: string) {
-        let date = new Date()
-
-        let task = {
-            id: uuidv4(),
-            title: title,
-            isCompleted: false,
-            createdOn: date.toDateString(),
-            category: 'Work'
-        }
-        let newTodo = [...todoList, task]
-        localStorage.setItem("tasks", JSON.stringify(newTodo))
-        setTodoList(newTodo)
+        dispatch({ title, type: 'addtask', category })
         setTask(false)
     }
     return (
@@ -75,16 +40,19 @@ export default function TodoCard() {
             <div className="w-3xl">
                 <div className="flex justify-between">
                     <button onClick={() => setTask(true)} className="bg-violet-500">Add Task</button>
-                    <button className="bg-gray-500">Filter</button>
+                    <div className="rounded w-fit h-fit bg-violet-500 p-2 text-lg">
+                        <label className="rounded m-auto" htmlFor="category" ></label>
+                        <select className="border-none" id="category" name="category" onChange={(e) => changeCategory(e.target.value.toString())} value={category}>
+                            <option className="text-black" value="work">Work</option>
+                            <option className="text-black" value="personal">personal</option>
+                        </select>
+                    </div>
                 </div>
                 <div className="mt-2 w-xl">{task ? <Task addtask={addTask}></Task> : null}</div>
 
                 <div className="bg-gray-200 p-2 mt-2 rounded-xl">
-                    {todoList?.length > 0 && todoList.map((item: todo) => <Card deleteCard={deleteCard} changeTitle={changeTitle} isCompleted={isCompleted} key="item.id" data={item} ></Card>)}
+                    {todoList[category]?.length > 0 && todoList[category].map((item: todo) => <Card deleteCard={deleteCard} changeTitle={changeTitle} isCompleted={isCompleted} key={item.id} data={item} ></Card>)}
                 </div>
-
-
-
             </div>
         </>
     )
